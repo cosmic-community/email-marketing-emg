@@ -29,8 +29,8 @@ export default async function HomePage() {
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-slate-800 mb-4">
-              Welcome to Cosmic Email Marketing
+              <h1 className="text-4xl font-bold text-slate-800 mb-4">
+                Welcome to EMG Email Marketing
             </h1>
             <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
               Manage contacts, create beautiful templates, and track your
