@@ -51,8 +51,8 @@ export default function LoginPage() {
           <div className="mx-auto h-20 w-20 bg-slate-800 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
             <img src="https://imgix.cosmicjs.com/888124b0-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg?w=80&h=80&fit=crop&auto=format,compress" alt="EMG Logo" className="w-12 h-12 object-contain" />
           </div>
-          </div>
-            <h1 className="text-4xl font-bold text-slate-800 mb-3">
+          <h1 className="text-4xl font-bold text-slate-800 mb-3">
+            EMG Email Marketing
               EMG Email Marketing
           </h1>
           <p className="text-lg text-slate-600 mb-8">
