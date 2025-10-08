@@ -34,7 +34,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
-          <link rel="icon" href="https://imgix.cosmicjs.com/10a6c530-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg" />
+            <link rel="icon" href="https://imgix.cosmicjs.com/888124b0-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg" />
       </head>
       <body className={inter.className}>
         <ClientLayoutRouter companyName={companyName}>

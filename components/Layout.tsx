@@ -104,7 +104,7 @@ export default function Layout({
             <div className="flex items-center min-w-0 flex-1">
               {brandLogoUrl ? (
                   <img 
-                    src="https://imgix.cosmicjs.com/10a6c530-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg?w=64&h=64&fit=crop&auto=format,compress"
+                    src="https://imgix.cosmicjs.com/888124b0-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg?w=64&h=64&fit=crop&auto=format,compress"
                     alt={`${companyName} logo`}
                     className="w-8 h-8 object-contain flex-shrink-0"
                   />
@@ -174,7 +174,7 @@ export default function Layout({
           <div className="flex items-center min-w-0 flex-1 justify-center">
             {brandLogoUrl ? (
                 <img 
-                  src="https://imgix.cosmicjs.com/10a6c530-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg?w=48&h=48&fit=crop&auto=format,compress"
+                    src="https://imgix.cosmicjs.com/888124b0-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg?w=48&h=48&fit=crop&auto=format,compress"
                   alt={`${companyName} logo`}
                   className="w-6 h-6 object-contain flex-shrink-0"
                 />

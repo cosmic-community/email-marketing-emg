@@ -49,9 +49,8 @@ export default function LoginPage() {
         {/* Header Section */}
         <div className="text-center mb-10">
           <div className="mx-auto h-20 w-20 bg-slate-800 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+            <img src="https://imgix.cosmicjs.com/888124b0-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg?w=80&h=80&fit=crop&auto=format,compress" alt="EMG Logo" className="w-12 h-12 object-contain" />
+          </div>
           </div>
             <h1 className="text-4xl font-bold text-slate-800 mb-3">
               EMG Email Marketing
