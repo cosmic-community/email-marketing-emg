@@ -47,10 +47,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl w-full">
         {/* Header Section */}
-        <div className="text-center mb-10">
-            <div className="mx-auto mb-6">
-              <img src="https://imgix.cosmicjs.com/888124b0-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg?w=160&h=160&fit=crop&auto=format,compress" alt="EMG Logo" className="w-20 h-20 object-contain" />
-            </div>
+          <div className="text-center mb-10">
+              <div className="flex justify-center mx-auto mb-6">
+                <img src="https://imgix.cosmicjs.com/888124b0-a471-11f0-8097-1935875d6ffe-emory-market-gardens-icon.svg?w=160&h=160&fit=crop&auto=format,compress" alt="EMG Logo" className="w-20 h-20 object-contain" />
+              </div>
           <h1 className="text-4xl font-bold text-slate-800 mb-3">
             EMG Email Marketing
               EMG Email Marketing
