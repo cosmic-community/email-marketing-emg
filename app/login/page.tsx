@@ -53,7 +53,6 @@ export default function LoginPage() {
               </div>
           <h1 className="text-4xl font-bold text-slate-800 mb-3">
             EMG Email Marketing
-              EMG Email Marketing
           </h1>
           <p className="text-lg text-slate-600 mb-8">
             Professional email campaigns made simple
