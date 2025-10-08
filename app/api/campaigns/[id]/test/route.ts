@@ -15,8 +15,7 @@ export async function POST(
       );
     }
 
-    const { id } = await params;
-    const { id } = await params;
+      const { id } = await params;
     const body = await request.json();
 
     if (!id) {
