@@ -1,4 +1,3 @@
-// app/api/campaigns/[id]/test/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getMarketingCampaign, getSettings } from "@/lib/cosmic";
 import { sendEmail } from "@/lib/resend";
@@ -8,6 +7,15 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // CRITICAL: Validate RESEND_API_KEY at runtime before processing
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json(
+        { error: "Email service not configured. Please set RESEND_API_KEY environment variable." },
+        { status: 503 }
+      );
+    }
+
+    const { id } = await params;
     const { id } = await params;
     const body = await request.json();
 
