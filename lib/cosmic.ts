@@ -3116,7 +3116,7 @@ export async function updateSettings(
 
       // Handle brand logo
       if (data.brand_logo !== undefined) {
-        metadataUpdates.brand_logo = data.brand_logo?.url?.split("/").pop();
+        metadataUpdates.brand_logo = data.brand_logo; // Store media name directly
       }
 
       if (data.ai_tone !== undefined) {

@@ -170,32 +170,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle brand logo - fetch media details if provided
-    let brandLogoData = null;
+    // Handle brand logo - store media name for Cosmic file metafield
+    let brandLogoName: string | null = null;
     if (data.brand_logo_name) {
       try {
-        // Find the media file by name
-        const mediaResult = await cosmic.media.find({ name: data.brand_logo_name }).props(['name', 'url', 'imgix_url']);
+        // Verify the media file exists by name
+        const mediaResult = await cosmic.media.find({ name: data.brand_logo_name }).props(['name']);
         
         if (mediaResult.media && mediaResult.media.length > 0) {
-          const mediaFile = mediaResult.media[0];
-          brandLogoData = {
-            url: mediaFile.url,
-            imgix_url: mediaFile.imgix_url,
-          };
+          brandLogoName = data.brand_logo_name; // Store the media name
         }
       } catch (error) {
-        console.error("Error fetching brand logo media:", error);
-        // Continue without logo if fetch fails
+        console.error("Error verifying brand logo media:", error);
+        // Continue without logo if verification fails
       }
     }
 
     // Prepare settings data with brand logo
     const settingsData: any = { ...data };
     
-    // Add brand logo to metadata if available
-    if (brandLogoData) {
-      settingsData.brand_logo = brandLogoData;
+    // Add brand logo name to metadata if available (Cosmic will resolve it to full media object)
+    if (brandLogoName) {
+      settingsData.brand_logo = brandLogoName; // Just the media name
     } else if (data.brand_logo_name === null) {
       // Explicitly remove brand logo if set to null
       settingsData.brand_logo = null;

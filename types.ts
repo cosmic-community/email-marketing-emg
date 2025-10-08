@@ -272,7 +272,7 @@ export interface Settings extends CosmicObject {
     brand_logo?: {
       url: string;
       imgix_url: string;
-    };
+    } | null;
     ai_tone?: {
       key: string;
       value: "Professional" | "Friendly" | "Casual" | "Formal";
