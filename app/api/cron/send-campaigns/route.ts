@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getMarketingCampaigns,
-  updateCampaignStatus,
   updateCampaignProgress,
   getSettings,
   updateEmailCampaign,
@@ -14,6 +13,9 @@ import {
 import { sendEmail, ResendRateLimitError } from "@/lib/resend";
 import { createUnsubscribeUrl, addTrackingToEmail } from "@/lib/email-tracking";
 import { MarketingCampaign, EmailContact } from "@/types";
+
+// Max allowed on Vercel Pro plan (default 60s is too tight for large batches)
+export const maxDuration = 300;
 
 // Rate limiting configuration optimized for MongoDB/Lambda
 // BALANCED CONFIGURATION - Optimized for ~134K emails/day with 3-minute cron
@@ -186,19 +188,15 @@ export async function GET(request: NextRequest) {
           }
         }
       } catch (error) {
-        console.error(`Error processing campaign ${campaign.id}:`, error);
-
-        // Update campaign with error status
-        await updateCampaignStatus(campaign.id, "Cancelled", {
-          sent: 0,
-          delivered: 0,
-          opened: 0,
-          clicked: 0,
-          bounced: 0,
-          unsubscribed: 0,
-          open_rate: "0%",
-          click_rate: "0%",
-        });
+        // Log the error but keep campaign in "Sending" so the next cron run
+        // retries automatically. Double-send protection is guaranteed by
+        // filterUnsentContacts + deterministic slug uniqueness in reservations.
+        const errorMsg =
+          error instanceof Error ? error.message : String(error);
+        console.error(
+          `⚠️  Error processing campaign ${campaign.id} (will retry on next cron run):`,
+          errorMsg
+        );
       }
     }
 
@@ -503,33 +501,41 @@ async function processCampaignBatch(
 
     batchesProcessed++;
 
-    // CRITICAL FIX: Update campaign progress after each batch using fresh database stats
-    const freshStats = await getCampaignSendStats(campaign.id);
+    // Update campaign progress after each batch using fresh database stats.
+    // Wrapped in try/catch so a stats-query failure doesn't kill the campaign
+    // after emails have already been sent successfully.
+    try {
+      const freshStats = await getCampaignSendStats(campaign.id);
 
-    const progressPercentage = Math.round(
-      (freshStats.sent / allContacts.length) * 100
-    );
+      const progressPercentage = Math.round(
+        (freshStats.sent / allContacts.length) * 100
+      );
 
-    console.log(
-      `💾 Updating campaign progress: ${freshStats.sent}/${allContacts.length} sent (${progressPercentage}%)`
-    );
+      console.log(
+        `💾 Updating campaign progress: ${freshStats.sent}/${allContacts.length} sent (${progressPercentage}%)`
+      );
 
-    await updateCampaignProgress(campaign.id, {
-      sent: freshStats.sent,
-      failed: freshStats.failed + freshStats.bounced,
-      total: allContacts.length,
-      progress_percentage: progressPercentage,
-      last_batch_completed: new Date().toISOString(),
-    });
+      await updateCampaignProgress(campaign.id, {
+        sent: freshStats.sent,
+        failed: freshStats.failed + freshStats.bounced,
+        total: allContacts.length,
+        progress_percentage: progressPercentage,
+        last_batch_completed: new Date().toISOString(),
+      });
 
-    // Throttle after progress update to prevent connection pool exhaustion
-    await new Promise((resolve) =>
-      setTimeout(resolve, DELAY_BETWEEN_DB_OPERATIONS)
-    );
+      await new Promise((resolve) =>
+        setTimeout(resolve, DELAY_BETWEEN_DB_OPERATIONS)
+      );
 
-    console.log(
-      `Batch ${batchesProcessed} complete. Database stats: ${freshStats.sent} sent, ${freshStats.pending} pending, ${freshStats.failed} failed, ${freshStats.bounced} bounced`
-    );
+      console.log(
+        `Batch ${batchesProcessed} complete. Database stats: ${freshStats.sent} sent, ${freshStats.pending} pending, ${freshStats.failed} failed, ${freshStats.bounced} bounced`
+      );
+    } catch (progressError) {
+      console.error(
+        `⚠️  Failed to update progress after batch ${batchesProcessed} for campaign ${campaign.id}:`,
+        progressError
+      );
+    }
 
     // Optimized delay between batches for MongoDB/Lambda performance
     if (batchesProcessed < MAX_BATCHES_PER_RUN && !rateLimitHit) {
@@ -542,43 +548,54 @@ async function processCampaignBatch(
     }
   }
 
-  // SIMPLE FIX: Check if campaign is complete by comparing stats to total contacts
+  // Check if campaign is complete by comparing stats to total contacts.
+  // Wrapped in try/catch so a stats failure doesn't bubble up and cancel the campaign.
   if (!rateLimitHit) {
-    console.log(`📊 Checking if campaign is complete...`);
+    try {
+      console.log(`📊 Checking if campaign is complete...`);
 
-    const finalFreshStats = await getCampaignSendStats(campaign.id);
+      const finalFreshStats = await getCampaignSendStats(campaign.id);
 
-    console.log(
-      `📊 Final stats: sent=${finalFreshStats.sent}, failed=${finalFreshStats.failed}, bounced=${finalFreshStats.bounced}, pending=${finalFreshStats.pending}, total_contacts=${allContacts.length}`
-    );
-
-    // Calculate total processed (sent + failed + bounced)
-    const totalProcessed =
-      finalFreshStats.sent + finalFreshStats.failed + finalFreshStats.bounced;
-
-    // Campaign is complete if all contacts have been processed and no pending
-    if (totalProcessed >= allContacts.length && finalFreshStats.pending === 0) {
       console.log(
-        `✅ Campaign ${campaign.id} fully completed! ${totalProcessed}/${allContacts.length} contacts processed`
+        `📊 Final stats: sent=${finalFreshStats.sent}, failed=${finalFreshStats.failed}, bounced=${finalFreshStats.bounced}, pending=${finalFreshStats.pending}, total_contacts=${allContacts.length}`
       );
 
-      return {
-        processed: emailsProcessed,
-        completed: true,
-        finalStats: {
-          sent: finalFreshStats.sent,
-          delivered: finalFreshStats.sent,
-          opened: 0,
-          clicked: 0,
-          bounced: finalFreshStats.bounced,
-          unsubscribed: 0,
-          open_rate: "0%",
-          click_rate: "0%",
-        },
-      };
-    } else {
-      console.log(
-        `⏳ Campaign ${campaign.id} still in progress: ${totalProcessed}/${allContacts.length} processed, ${finalFreshStats.pending} pending`
+      const totalProcessed =
+        finalFreshStats.sent +
+        finalFreshStats.failed +
+        finalFreshStats.bounced;
+
+      if (
+        totalProcessed >= allContacts.length &&
+        finalFreshStats.pending === 0
+      ) {
+        console.log(
+          `✅ Campaign ${campaign.id} fully completed! ${totalProcessed}/${allContacts.length} contacts processed`
+        );
+
+        return {
+          processed: emailsProcessed,
+          completed: true,
+          finalStats: {
+            sent: finalFreshStats.sent,
+            delivered: finalFreshStats.sent,
+            opened: 0,
+            clicked: 0,
+            bounced: finalFreshStats.bounced,
+            unsubscribed: 0,
+            open_rate: "0%",
+            click_rate: "0%",
+          },
+        };
+      } else {
+        console.log(
+          `⏳ Campaign ${campaign.id} still in progress: ${totalProcessed}/${allContacts.length} processed, ${finalFreshStats.pending} pending`
+        );
+      }
+    } catch (completionCheckError) {
+      console.error(
+        `⚠️  Failed to check completion status for campaign ${campaign.id}:`,
+        completionCheckError
       );
     }
   }
